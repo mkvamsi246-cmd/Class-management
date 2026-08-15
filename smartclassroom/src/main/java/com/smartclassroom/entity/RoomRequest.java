@@ -1,6 +1,7 @@
 package com.smartclassroom.entity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import jakarta.persistence.Entity;
@@ -9,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 @Entity
@@ -32,6 +34,8 @@ public class RoomRequest {
 
     private String status;
 
+    private LocalDateTime createdAt;
+
     @ManyToOne
     @JoinColumn(name = "faculty_id")
     private Faculty faculty;
@@ -51,6 +55,13 @@ public class RoomRequest {
     private Timetable targetTimetable;
 
     public RoomRequest() {
+    }
+
+    @PrePersist
+    public void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
     }
 
     public Integer getId() {
@@ -139,5 +150,13 @@ public class RoomRequest {
 
     public void setTargetTimetable(Timetable targetTimetable) {
         this.targetTimetable = targetTimetable;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

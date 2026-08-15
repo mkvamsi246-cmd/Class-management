@@ -49,6 +49,9 @@ public class FacultyService {
         faculty.setFacultyName(request.getFacultyName());
         faculty.setDepartment(request.getDepartment());
         faculty.setUser(savedUser);
+        if (request.getPriority() != null) {
+            faculty.setPriority(request.getPriority());
+        }
 
         facultyRepository.save(faculty);
         auditLogService.saveLog("Faculty Created/Updated", request.getFacultyName());
@@ -66,6 +69,9 @@ public class FacultyService {
         faculty.setFacultyName(request.getFacultyName());
         faculty.setDepartment(request.getDepartment());
         faculty.setEmail(email);
+        if (request.getPriority() != null) {
+            faculty.setPriority(request.getPriority());
+        }
 
         User user = faculty.getUser();
         if (user != null) {

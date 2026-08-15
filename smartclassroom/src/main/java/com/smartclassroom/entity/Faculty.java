@@ -26,6 +26,8 @@ public class Faculty {
     @JoinColumn(name = "user_id")
     private User user;
 
+    private Integer priority = 1;
+
     public Faculty() {
     }
 
@@ -67,5 +69,13 @@ public class Faculty {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public Integer getPriority() {
+        return priority != null ? priority : 1;
+    }
+
+    public void setPriority(Integer priority) {
+        this.priority = priority;
     }
 }

@@ -1,10 +1,15 @@
 package com.smartclassroom.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.TextStyle;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +49,7 @@ public class RoomRequestService {
         request.setReason(dto.getReason());
         request.setStatus("PENDING");
         request.setRequestType(type);
+        request.setCreatedAt(LocalDateTime.now());
 
         if ("SWAP".equals(type)) {
             // ── SWAP request ────────────────────────────────────────────
@@ -221,5 +227,135 @@ public class RoomRequestService {
 
         auditLogService.saveLog("Room Request Rejected", request.getFaculty().getFacultyName());
         return updated;
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // AUTO ASSIGNMENT (AFTER 2 MINUTES TIMEOUT WITH PRIORITY RESOLUTION)
+    // ──────────────────────────────────────────────────────────────────────
+    @Scheduled(fixedRate = 10000)
+    @Transactional
+    public void autoAssignPendingRequests() {
+        List<RoomRequest> pendingRequests = roomRequestRepository.findByStatus("PENDING");
+        if (pendingRequests.isEmpty()) {
+            return;
+        }
+
+        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(2);
+        List<RoomRequest> expiredRequests = pendingRequests.stream()
+                .filter(r -> r.getCreatedAt() != null && !r.getCreatedAt().isAfter(cutoffTime))
+                .collect(Collectors.toList());
+
+        if (expiredRequests.isEmpty()) {
+            return;
+        }
+
+        // Sort expired requests by Faculty Priority (descending) then submission time (ascending)
+        expiredRequests.sort((r1, r2) -> {
+            int p1 = (r1.getFaculty() != null && r1.getFaculty().getPriority() != null) ? r1.getFaculty().getPriority() : 1;
+            int p2 = (r2.getFaculty() != null && r2.getFaculty().getPriority() != null) ? r2.getFaculty().getPriority() : 1;
+            if (p1 != p2) {
+                return Integer.compare(p2, p1); // Higher priority first
+            }
+            if (r1.getCreatedAt() != null && r2.getCreatedAt() != null) {
+                return r1.getCreatedAt().compareTo(r2.getCreatedAt()); // Earlier timestamp first
+            }
+            return 0;
+        });
+
+        for (RoomRequest request : expiredRequests) {
+            RoomRequest current = roomRequestRepository.findById(request.getId()).orElse(null);
+            if (current == null || !"PENDING".equalsIgnoreCase(current.getStatus())) {
+                continue;
+            }
+
+            if ("SWAP".equals(current.getRequestType())) {
+                Timetable requesterSlot = current.getRequesterTimetable();
+                Timetable targetSlot = current.getTargetTimetable();
+
+                if (requesterSlot == null || targetSlot == null) {
+                    current.setStatus("REJECTED");
+                    roomRequestRepository.save(current);
+                    continue;
+                }
+
+                // Approve request & swap slots
+                approveRequest(current.getId());
+                auditLogService.saveLog(
+                        "Swap Request Auto-Approved (2m Timeout, Priority: " + getFacultyPriority(current.getFaculty()) + ")",
+                        current.getFaculty() != null ? current.getFaculty().getFacultyName() : "System");
+
+                if (current.getFaculty() != null && current.getFaculty().getUser() != null) {
+                    notificationService.createNotification(
+                            current.getFaculty().getUser().getId(),
+                            "⚡ Your swap request was automatically approved and assigned after 2 minutes (Faculty Priority: "
+                                    + getFacultyPriority(current.getFaculty()) + ").");
+                }
+            } else {
+                // UNOCCUPIED request
+                Room room = current.getRoom();
+                boolean isOccupied = isRoomOccupiedOrAlreadyApproved(
+                        room, current.getRequestDate(), current.getStartTime(), current.getEndTime(), current.getId());
+
+                if (isOccupied) {
+                    current.setStatus("REJECTED");
+                    roomRequestRepository.save(current);
+
+                    if (current.getFaculty() != null && current.getFaculty().getUser() != null) {
+                        notificationService.createNotification(
+                                current.getFaculty().getUser().getId(),
+                                "❌ Your room request for " + (room != null ? room.getRoomNumber() : "room")
+                                        + " was REJECTED because the slot was allocated to a higher priority request.");
+                    }
+                    auditLogService.saveLog(
+                            "Room Request Auto-Rejected due to Conflict",
+                            current.getFaculty() != null ? current.getFaculty().getFacultyName() : "System");
+                } else {
+                    approveRequest(current.getId());
+                    auditLogService.saveLog(
+                            "Room Request Auto-Approved (2m Timeout, Priority: " + getFacultyPriority(current.getFaculty()) + ")",
+                            current.getFaculty() != null ? current.getFaculty().getFacultyName() : "System");
+
+                    if (current.getFaculty() != null && current.getFaculty().getUser() != null) {
+                        notificationService.createNotification(
+                                current.getFaculty().getUser().getId(),
+                                "⚡ Your room request for " + (room != null ? room.getRoomNumber() : "room")
+                                        + " was automatically approved and assigned after 2 minutes (Faculty Priority: "
+                                        + getFacultyPriority(current.getFaculty()) + ").");
+                    }
+                }
+            }
+        }
+    }
+
+    private int getFacultyPriority(Faculty faculty) {
+        return (faculty != null && faculty.getPriority() != null) ? faculty.getPriority() : 1;
+    }
+
+    private boolean isRoomOccupiedOrAlreadyApproved(Room room, LocalDate requestDate, LocalTime startTime, LocalTime endTime, Integer excludeRequestId) {
+        if (room == null || requestDate == null || startTime == null || endTime == null) {
+            return false;
+        }
+        String dayOfWeek = requestDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH).toUpperCase();
+        List<Timetable> timetableConflicts = timetableRepository
+                .findByRoomIdAndDayOfWeekAndStartTimeLessThanAndEndTimeGreaterThan(
+                        room.getId(), dayOfWeek, endTime, startTime);
+        if (!timetableConflicts.isEmpty()) {
+            return true;
+        }
+
+        List<RoomRequest> approvedRoomRequests = roomRequestRepository.findByStatus("APPROVED");
+        for (RoomRequest approved : approvedRoomRequests) {
+            if (excludeRequestId != null && excludeRequestId.equals(approved.getId())) {
+                continue;
+            }
+            if ("UNOCCUPIED".equals(approved.getRequestType()) && approved.getRoom() != null
+                    && approved.getRoom().getId().equals(room.getId())
+                    && requestDate.equals(approved.getRequestDate())) {
+                if (startTime.isBefore(approved.getEndTime()) && endTime.isAfter(approved.getStartTime())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

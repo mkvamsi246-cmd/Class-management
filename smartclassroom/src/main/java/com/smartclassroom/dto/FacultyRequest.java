@@ -10,6 +10,8 @@ public class FacultyRequest {
 
     private String password;
 
+    private Integer priority;
+
     public FacultyRequest() {
     }
 
@@ -43,5 +45,13 @@ public class FacultyRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Integer getPriority() {
+        return priority;
+    }
+
+    public void setPriority(Integer priority) {
+        this.priority = priority;
     }
 }
