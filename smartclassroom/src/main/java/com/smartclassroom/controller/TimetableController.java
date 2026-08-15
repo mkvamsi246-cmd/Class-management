@@ -39,6 +39,13 @@ public class TimetableController {
         return timetableService.addClass(request);
     }
 
+    @org.springframework.web.bind.annotation.PutMapping("/{id}")
+    public Timetable updateClass(
+            @PathVariable Integer id,
+            @RequestBody TimetableRequest request) {
+        return timetableService.updateClass(id, request);
+    }
+
     @GetMapping("/faculty/{facultyId}")
     public List<Timetable> getFacultyClasses(
             @PathVariable Integer facultyId) {

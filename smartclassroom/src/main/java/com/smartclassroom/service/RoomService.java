@@ -18,12 +18,22 @@ public class RoomService {
     private AuditLogService auditLogService;
 
     public Room addRoom(Room room) {
-        // Auto-set status to AVAILABLE on creation
+        String roomNumber = room.getRoomNumber().trim();
+        Room existingRoom = roomRepository.findByRoomNumber(roomNumber).orElseGet(() -> {
+            Room newRoom = new Room();
+            newRoom.setRoomNumber(roomNumber);
+            return newRoom;
+        });
+
+        existingRoom.setRoomType(room.getRoomType());
         if (room.getStatus() == null || room.getStatus().isBlank()) {
-            room.setStatus("AVAILABLE");
+            existingRoom.setStatus("AVAILABLE");
+        } else {
+            existingRoom.setStatus(room.getStatus());
         }
-        Room savedRoom = roomRepository.save(room);
-        auditLogService.saveLog("Room Created", room.getRoomNumber());
+
+        Room savedRoom = roomRepository.save(existingRoom);
+        auditLogService.saveLog("Room Saved", savedRoom.getRoomNumber());
         return savedRoom;
     }
 
@@ -39,7 +49,6 @@ public class RoomService {
 
         existingRoom.setRoomNumber(room.getRoomNumber());
         existingRoom.setRoomType(room.getRoomType());
-        // Keep status update-able but only these three fields matter
         if (room.getStatus() != null) {
             existingRoom.setStatus(room.getStatus());
         }

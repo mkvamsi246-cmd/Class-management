@@ -47,6 +47,26 @@ public class TimetableService {
         return timetableRepository.save(timetable);
     }
 
+    public Timetable updateClass(Integer id, TimetableRequest request) {
+        Timetable timetable = timetableRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Timetable entry not found"));
+
+        Faculty faculty = facultyRepository.findById(request.getFacultyId())
+                .orElseThrow(() -> new RuntimeException("Faculty not found"));
+
+        Room room = roomRepository.findById(request.getRoomId())
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        timetable.setSubjectName(request.getSubjectName());
+        timetable.setDayOfWeek(request.getDayOfWeek());
+        timetable.setStartTime(request.getStartTime());
+        timetable.setEndTime(request.getEndTime());
+        timetable.setFaculty(faculty);
+        timetable.setRoom(room);
+
+        return timetableRepository.save(timetable);
+    }
+
     public List<Timetable> getFacultyClasses(Integer facultyId) {
 
         return timetableRepository.findByFacultyId(facultyId);

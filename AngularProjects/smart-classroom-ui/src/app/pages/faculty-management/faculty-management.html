@@ -1,12 +1,26 @@
 <div class="page-container">
   <div class="page-header">
     <h1>Faculty Management</h1>
-    <p class="subtitle">Add and manage faculty members</p>
+    <p class="subtitle">Add, edit, and manage faculty members individually or bulk upload via Excel</p>
+  </div>
+
+  <!-- Excel Upload Card -->
+  <div class="form-card excel-card">
+    <h2>📊 Bulk Upload Faculty (Excel)</h2>
+    <p class="excel-hint">
+      Upload an <code>.xlsx</code> file with headers: <strong>Faculty Name</strong>, <strong>Department</strong>, <strong>Email</strong>, <strong>Password</strong> <i>(optional)</i>
+    </p>
+    <div class="excel-upload-bar">
+      <input type="file" accept=".xlsx, .xls" (change)="onFileSelected($event)" #fileInput>
+      <button class="btn-success" [disabled]="!selectedFile || isUploading" (click)="uploadExcel()">
+        {{ isUploading ? 'Uploading...' : '📁 Import Faculty Excel' }}
+      </button>
+    </div>
   </div>
 
   <div class="form-card">
-    <h2>Add New Faculty</h2>
-    <div class="form-grid">
+    <h2>{{ editingFacultyId ? '✏️ Edit Faculty' : 'Add New Faculty' }}</h2>
+    <div class="form-row">
 
       <div class="form-group">
         <label for="facultyName">Faculty Name *</label>
@@ -36,19 +50,23 @@
       </div>
 
       <div class="form-group">
-        <label for="facultyPassword">Password *</label>
+        <label for="facultyPassword">Password {{ editingFacultyId ? '(Optional)' : '*' }}</label>
         <input
           id="facultyPassword"
           type="password"
-          placeholder="Login password"
+          placeholder="{{ editingFacultyId ? 'Leave blank to keep' : 'Login password' }}"
           [(ngModel)]="password">
       </div>
 
-    </div>
-    <div class="form-actions">
-      <button class="btn-primary" (click)="saveFaculty()">
-        + Add Faculty
-      </button>
+      <div class="form-group btn-group" style="display: flex; align-items: center; gap: 8px;">
+        <button *ngIf="editingFacultyId" class="btn-secondary" (click)="cancelEdit()">
+          Cancel
+        </button>
+        <button class="btn-primary" (click)="saveFaculty()">
+          {{ editingFacultyId ? '💾 Save Changes' : '+ Add Faculty' }}
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -57,23 +75,28 @@
     <table>
       <thead>
         <tr>
-          <th>ID</th>
+          <th>S.No</th>
           <th>Name</th>
           <th>Department</th>
           <th>Email</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
-        @for(faculty of facultyList; track faculty.id) {
+        @for(faculty of facultyList; track faculty.id; let i = $index) {
         <tr>
-          <td>{{faculty.id}}</td>
+          <td>{{ i + 1 }}</td>
           <td><strong>{{faculty.facultyName}}</strong></td>
           <td>{{faculty.department || '—'}}</td>
           <td>{{faculty.email}}</td>
+          <td>
+            <button class="btn-secondary" (click)="editFaculty(faculty)" style="margin-right: 6px; padding: 5px 12px; font-size: 12px;">✏️ Edit</button>
+            <button class="btn-danger-sm" (click)="deleteFaculty(faculty.id)">Delete</button>
+          </td>
         </tr>
         }
         @empty {
-        <tr><td colspan="4" class="empty">No faculty members found.</td></tr>
+        <tr><td colspan="5" class="empty">No faculty members found.</td></tr>
         }
       </tbody>
     </table>

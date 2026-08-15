@@ -3,6 +3,7 @@ package com.smartclassroom.controller;
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,16 +14,24 @@ import com.smartclassroom.service.ExcelUploadService;
 
 @RestController
 @RequestMapping("/api/upload")
+@CrossOrigin(origins = "*")
 public class FileUploadController {
 
     @Autowired
     private ExcelUploadService excelUploadService;
 
-    @PostMapping("/timetable")
-    public String uploadTimetable(
-            @RequestParam("file") MultipartFile file)
-            throws IOException {
+    @PostMapping("/faculty")
+    public String uploadFaculty(@RequestParam("file") MultipartFile file) throws IOException {
+        return excelUploadService.uploadFaculty(file);
+    }
 
+    @PostMapping("/rooms")
+    public String uploadRooms(@RequestParam("file") MultipartFile file) throws IOException {
+        return excelUploadService.uploadRooms(file);
+    }
+
+    @PostMapping("/timetable")
+    public String uploadTimetable(@RequestParam("file") MultipartFile file) throws IOException {
         return excelUploadService.uploadTimetable(file);
     }
 }

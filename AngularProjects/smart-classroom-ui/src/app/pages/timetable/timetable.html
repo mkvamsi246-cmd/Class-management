@@ -4,8 +4,22 @@
     <p class="subtitle">Schedule and manage class timetables</p>
   </div>
 
+  <!-- Excel Upload Card -->
+  <div class="form-card excel-card">
+    <h2>📊 Bulk Upload Timetable (Excel)</h2>
+    <p class="excel-hint">
+      Upload an <code>.xlsx</code> file with headers: <strong>Subject Name</strong>, <strong>Faculty Name or Email</strong>, <strong>Room Number</strong>, <strong>Day</strong> <i>(MONDAY, etc.)</i>, <strong>Start Time</strong> <i>(e.g., 09:00)</i>, <strong>End Time</strong> <i>(e.g., 10:00)</i>
+    </p>
+    <div class="excel-upload-bar">
+      <input type="file" accept=".xlsx, .xls" (change)="onFileSelected($event)">
+      <button class="btn-success" [disabled]="!selectedFile || isUploading" (click)="uploadExcel()">
+        {{ isUploading ? 'Uploading...' : '📁 Import Timetable Excel' }}
+      </button>
+    </div>
+  </div>
+
   <div class="form-card">
-    <h2>Add Timetable Entry</h2>
+    <h2>{{ editingTimetableId ? '✏️ Edit Timetable Entry' : 'Add Timetable Entry' }}</h2>
     <div class="form-grid">
 
       <div class="form-group">
@@ -58,8 +72,11 @@
     </div>
 
     <div class="form-actions">
+      <button *ngIf="editingTimetableId" class="btn-secondary" (click)="cancelEdit()" style="margin-right: 8px;">
+        Cancel
+      </button>
       <button class="btn-primary" (click)="saveTimetable()">
-        + Add Entry
+        {{ editingTimetableId ? '💾 Save Changes' : '+ Add Entry' }}
       </button>
     </div>
   </div>
@@ -87,6 +104,7 @@
           <td>{{t.startTime}}</td>
           <td>{{t.endTime}}</td>
           <td>
+            <button class="btn-secondary" (click)="editEntry(t)" style="margin-right: 6px; padding: 5px 12px; font-size: 12px;">✏️ Edit</button>
             <button class="btn-danger-sm" (click)="deleteEntry(t.id)">Delete</button>
           </td>
         </tr>

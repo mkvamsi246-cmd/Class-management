@@ -4,8 +4,22 @@
     <p class="subtitle">Manage classrooms, projector rooms, and labs</p>
   </div>
 
+  <!-- Excel Upload Card -->
+  <div class="form-card excel-card" *ngIf="role === 'ADMIN'">
+    <h2>📊 Bulk Upload Rooms (Excel)</h2>
+    <p class="excel-hint">
+      Upload an <code>.xlsx</code> file with headers: <strong>Room Number</strong>, <strong>Room Type</strong> <i>(Classroom/Projector Room/Lab)</i>, <strong>Status</strong> <i>(AVAILABLE/OCCUPIED)</i>
+    </p>
+    <div class="excel-upload-bar">
+      <input type="file" accept=".xlsx, .xls" (change)="onFileSelected($event)">
+      <button class="btn-success" [disabled]="!selectedFile || isUploading" (click)="uploadExcel()">
+        {{ isUploading ? 'Uploading...' : '📁 Import Rooms Excel' }}
+      </button>
+    </div>
+  </div>
+
   <div class="form-card" *ngIf="role === 'ADMIN'">
-    <h2>Add New Room</h2>
+    <h2>{{ editingRoomId ? '✏️ Edit Room' : 'Add New Room' }}</h2>
     <div class="form-row">
       <div class="form-group">
         <label for="roomNumber">Room Number</label>
@@ -26,9 +40,20 @@
         </select>
       </div>
 
+      <div class="form-group" *ngIf="editingRoomId">
+        <label for="roomStatus">Status</label>
+        <select id="roomStatus" [(ngModel)]="status">
+          <option value="AVAILABLE">AVAILABLE</option>
+          <option value="OCCUPIED">OCCUPIED</option>
+        </select>
+      </div>
+
       <div class="form-group btn-group">
-        <button class="btn-primary" (click)="addRoom()">
-          + Add Room
+        <button *ngIf="editingRoomId" class="btn-secondary" (click)="cancelEdit()" style="margin-right: 8px;">
+          Cancel
+        </button>
+        <button class="btn-primary" (click)="saveRoom()">
+          {{ editingRoomId ? '💾 Save Changes' : '+ Add Room' }}
         </button>
       </div>
     </div>
@@ -39,7 +64,7 @@
     <table>
       <thead>
         <tr>
-          <th>ID</th>
+          <th>S.No</th>
           <th>Room Number</th>
           <th>Room Type</th>
           <th>Status</th>
@@ -47,8 +72,8 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let room of roomList">
-          <td>{{room.id}}</td>
+        <tr *ngFor="let room of roomList; let i = index">
+          <td>{{ i + 1 }}</td>
           <td><span class="room-number">{{room.roomNumber}}</span></td>
           <td>
             <span class="badge" [ngClass]="{
@@ -64,7 +89,8 @@
             }">{{room.status}}</span>
           </td>
           <td *ngIf="role === 'ADMIN'">
-            <button class="btn-danger" (click)="deleteRoom(room.id)">Delete</button>
+            <button class="btn-secondary" (click)="editRoom(room)" style="margin-right: 6px; padding: 5px 12px; font-size: 12px;">✏️ Edit</button>
+            <button class="btn-danger-sm" (click)="deleteRoom(room.id)">Delete</button>
           </td>
         </tr>
         <tr *ngIf="roomList.length === 0">

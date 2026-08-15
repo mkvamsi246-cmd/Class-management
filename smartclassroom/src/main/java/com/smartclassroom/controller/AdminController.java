@@ -4,7 +4,9 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,17 +25,25 @@ public class AdminController {
     @Autowired
     private FacultyService facultyService;
     @Autowired
-private FacultyRepository facultyRepository;
-    @GetMapping("/faculty")
-public List<Faculty> getAllFaculty() {
+    private FacultyRepository facultyRepository;
 
-    return facultyRepository.findAll();
-}
+    @GetMapping("/faculty")
+    public List<Faculty> getAllFaculty() {
+        return facultyRepository.findAll();
+    }
 
     @PostMapping("/faculty")
-    public String createFaculty(
-            @RequestBody FacultyRequest request) {
-
+    public String createFaculty(@RequestBody FacultyRequest request) {
         return facultyService.createFaculty(request);
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/faculty/{id}")
+    public String updateFaculty(@PathVariable Integer id, @RequestBody FacultyRequest request) {
+        return facultyService.updateFaculty(id, request);
+    }
+
+    @DeleteMapping("/faculty/{id}")
+    public String deleteFaculty(@PathVariable Integer id) {
+        return facultyService.deleteFaculty(id);
     }
 }

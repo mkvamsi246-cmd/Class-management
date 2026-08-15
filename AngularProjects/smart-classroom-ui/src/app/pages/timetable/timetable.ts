@@ -18,7 +18,7 @@ export class Timetable implements OnInit {
   facultyList: any[] = [];
   roomList: any[] = [];
 
-  // Form fields
+  editingTimetableId: number | null = null;
   subjectName = '';
   facultyId: number | null = null;
   roomId: number | null = null;
@@ -27,6 +27,9 @@ export class Timetable implements OnInit {
   endTime = '';
 
   days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+
+  selectedFile: File | null = null;
+  isUploading = false;
 
   constructor(
     private timetableService: TimetableService,
@@ -64,6 +67,31 @@ export class Timetable implements OnInit {
       });
   }
 
+  editEntry(entry: any) {
+    this.editingTimetableId = entry.id;
+    this.subjectName = entry.subjectName || '';
+    this.facultyId = entry.faculty?.id || null;
+    this.roomId = entry.room?.id || null;
+    this.dayOfWeek = entry.dayOfWeek || '';
+    this.startTime = entry.startTime || '';
+    this.endTime = entry.endTime || '';
+
+    const formCard = document.querySelector('.form-card:not(.excel-card)');
+    if (formCard) {
+      formCard.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
+  cancelEdit() {
+    this.editingTimetableId = null;
+    this.subjectName = '';
+    this.facultyId = null;
+    this.roomId = null;
+    this.dayOfWeek = '';
+    this.startTime = '';
+    this.endTime = '';
+  }
+
   saveTimetable() {
     if (!this.subjectName || !this.facultyId || !this.roomId || !this.dayOfWeek || !this.startTime || !this.endTime) {
       alert('Please fill in all fields.');
@@ -79,29 +107,70 @@ export class Timetable implements OnInit {
       endTime: this.endTime
     };
 
-    this.timetableService
-      .addTimetable(timetable)
-      .subscribe({
-        next: () => {
-          alert('Timetable entry added successfully!');
-          this.subjectName = '';
-          this.facultyId = null;
-          this.roomId = null;
-          this.dayOfWeek = '';
-          this.startTime = '';
-          this.endTime = '';
-          this.loadTimetable();
-        },
-        error: (err) => {
-          alert('Error: ' + (err.error?.message || err.message));
-        }
-      });
+    if (this.editingTimetableId) {
+      this.timetableService
+        .updateTimetable(this.editingTimetableId, timetable)
+        .subscribe({
+          next: () => {
+            alert('Timetable entry updated successfully!');
+            this.cancelEdit();
+            this.loadTimetable();
+          },
+          error: (err) => {
+            alert('Error: ' + (err.error?.message || err.message));
+          }
+        });
+    } else {
+      this.timetableService
+        .addTimetable(timetable)
+        .subscribe({
+          next: () => {
+            alert('Timetable entry added successfully!');
+            this.cancelEdit();
+            this.loadTimetable();
+          },
+          error: (err) => {
+            alert('Error: ' + (err.error?.message || err.message));
+          }
+        });
+    }
   }
 
   deleteEntry(id: number) {
     if (!confirm('Delete this timetable entry?')) return;
     this.timetableService.deleteTimetable(id).subscribe(() => {
+      if (this.editingTimetableId === id) {
+        this.cancelEdit();
+      }
       this.loadTimetable();
+    });
+  }
+
+  onFileSelected(event: any) {
+    if (event.target.files && event.target.files.length > 0) {
+      this.selectedFile = event.target.files[0];
+    }
+  }
+
+  uploadExcel() {
+    if (!this.selectedFile) {
+      alert('Please select an Excel file (.xlsx) to upload.');
+      return;
+    }
+
+    this.isUploading = true;
+    this.timetableService.uploadTimetableExcel(this.selectedFile).subscribe({
+      next: (res: any) => {
+        alert(res || 'Timetable imported successfully!');
+        this.selectedFile = null;
+        this.isUploading = false;
+        this.loadTimetable();
+      },
+      error: (err: any) => {
+        this.isUploading = false;
+        const msg = err?.error || err?.message || 'Error uploading file';
+        alert('Upload failed: ' + msg);
+      }
     });
   }
 }
