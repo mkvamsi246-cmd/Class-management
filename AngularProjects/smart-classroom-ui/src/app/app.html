@@ -1,0 +1,69 @@
+@if(showMenu){
+
+<div class="sidebar">
+
+    <h2>SMART CLASSROOM</h2>
+
+    @if(role === 'ADMIN') {
+
+        <a routerLink="/admin-dashboard">
+            Dashboard
+        </a>
+
+        <a routerLink="/faculty-management">
+            Faculty
+        </a>
+
+        <a routerLink="/room-management">
+            Rooms
+        </a>
+
+        <a routerLink="/timetable">
+            Timetable
+        </a>
+
+        <a routerLink="/room-request">
+            Requests
+        </a>
+
+    }
+
+    @if(role === 'FACULTY') {
+
+        <a routerLink="/faculty-dashboard">
+            Dashboard
+        </a>
+
+        <a routerLink="/room-management">
+            Rooms
+        </a>
+
+        <a routerLink="/room-request">
+            Request Room
+        </a>
+
+        <a routerLink="/my-requests">
+            My Requests
+        </a>
+
+        <a routerLink="/change-password">
+            Change Password
+        </a>
+
+    }
+
+    <button (click)="logout()">
+        Logout
+    </button>
+
+</div>
+
+}
+
+<div
+[class.content]="showMenu"
+[class.fullScreen]="!showMenu">
+
+    <router-outlet></router-outlet>
+
+</div>

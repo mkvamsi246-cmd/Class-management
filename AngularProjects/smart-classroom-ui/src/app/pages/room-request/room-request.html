@@ -1,0 +1,176 @@
+<div class="page-container">
+
+  <!-- ===================== ADMIN VIEW ===================== -->
+  @if(role === 'ADMIN') {
+
+  <div class="page-header">
+    <h1>Request Management</h1>
+    <p class="subtitle">Review and action faculty room and swap requests</p>
+  </div>
+
+  <div class="tab-bar">
+    <button
+      class="tab-btn"
+      [class.active]="adminTab === 'UNOCCUPIED'"
+      (click)="adminTab = 'UNOCCUPIED'">
+      📋 Unoccupied Slot Requests
+      <span class="badge-count" *ngIf="unoccupiedRequests.length > 0">{{unoccupiedRequests.length}}</span>
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="adminTab === 'SWAP'"
+      (click)="adminTab = 'SWAP'">
+      🔄 Swap Requests
+      <span class="badge-count" *ngIf="swapRequests.length > 0">{{swapRequests.length}}</span>
+    </button>
+  </div>
+
+  <!-- Unoccupied Requests Tab -->
+  <div class="table-card" *ngIf="adminTab === 'UNOCCUPIED'">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Faculty</th>
+          <th>Room</th>
+          <th>Date</th>
+          <th>Time Slot</th>
+          <th>Reason</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let req of unoccupiedRequests">
+          <td>{{req.id}}</td>
+          <td>{{req.faculty?.facultyName}}</td>
+          <td>{{req.room?.roomNumber}} <span class="type-tag">{{req.room?.roomType}}</span></td>
+          <td>{{req.requestDate}}</td>
+          <td>{{req.startTime}} – {{req.endTime}}</td>
+          <td>{{req.reason || '—'}}</td>
+          <td><span class="status-badge" [ngClass]="'status-' + req.status?.toLowerCase()">{{req.status}}</span></td>
+          <td>
+            <ng-container *ngIf="req.status === 'PENDING'">
+              <button class="btn-approve" (click)="approve(req.id)">Approve</button>
+              <button class="btn-reject" (click)="reject(req.id)">Reject</button>
+            </ng-container>
+          </td>
+        </tr>
+        <tr *ngIf="unoccupiedRequests.length === 0">
+          <td colspan="8" class="empty">No unoccupied slot requests.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Swap Requests Tab -->
+  <div class="table-card" *ngIf="adminTab === 'SWAP'">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Requested By</th>
+          <th>Their Slot</th>
+          <th>↔</th>
+          <th>Target Faculty</th>
+          <th>Target Slot</th>
+          <th>Reason</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let req of swapRequests">
+          <td>{{req.id}}</td>
+          <td>{{req.faculty?.facultyName}}</td>
+          <td>
+            <strong>{{req.requesterTimetable?.subjectName}}</strong><br>
+            <small>{{req.requesterTimetable?.dayOfWeek | titlecase}} {{req.requesterTimetable?.startTime}} – {{req.requesterTimetable?.endTime}}</small><br>
+            <small class="room-tag">{{req.requesterTimetable?.room?.roomNumber}}</small>
+          </td>
+          <td>⇄</td>
+          <td>{{req.targetTimetable?.faculty?.facultyName}}</td>
+          <td>
+            <strong>{{req.targetTimetable?.subjectName}}</strong><br>
+            <small>{{req.targetTimetable?.dayOfWeek | titlecase}} {{req.targetTimetable?.startTime}} – {{req.targetTimetable?.endTime}}</small><br>
+            <small class="room-tag">{{req.targetTimetable?.room?.roomNumber}}</small>
+          </td>
+          <td>{{req.reason || '—'}}</td>
+          <td><span class="status-badge" [ngClass]="'status-' + req.status?.toLowerCase()">{{req.status}}</span></td>
+          <td>
+            <ng-container *ngIf="req.status === 'PENDING'">
+              <button class="btn-approve" (click)="approve(req.id)">Approve</button>
+              <button class="btn-reject" (click)="reject(req.id)">Reject</button>
+            </ng-container>
+          </td>
+        </tr>
+        <tr *ngIf="swapRequests.length === 0">
+          <td colspan="9" class="empty">No swap requests.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  }
+
+  <!-- ===================== FACULTY VIEW ===================== -->
+  @if(role === 'FACULTY') {
+
+  <div class="page-header">
+    <h1>Request Unoccupied Slot</h1>
+    <p class="subtitle">Pick a free room and time to request temporary use</p>
+  </div>
+
+  <div class="form-card">
+    <h2>1. Pick an Available Room</h2>
+    <div class="room-cards">
+      <div
+        class="room-card"
+        *ngFor="let room of availableRooms"
+        [class.selected]="selectedRoomId === room.id"
+        (click)="selectRoom(room.id)">
+        <div class="room-icon">
+          <ng-container *ngIf="room.roomType === 'Lab'">🔬</ng-container>
+          <ng-container *ngIf="room.roomType === 'Projector Room'">📽️</ng-container>
+          <ng-container *ngIf="room.roomType !== 'Lab' && room.roomType !== 'Projector Room'">🏫</ng-container>
+        </div>
+        <div class="room-card-info">
+          <span class="room-card-number">{{room.roomNumber}}</span>
+          <span class="room-card-type">{{room.roomType}}</span>
+        </div>
+        <span class="check-mark" *ngIf="selectedRoomId === room.id">✓</span>
+      </div>
+      <p class="empty" *ngIf="availableRooms.length === 0">No available rooms right now.</p>
+    </div>
+  </div>
+
+  <div class="form-card" *ngIf="selectedRoomId">
+    <h2>2. Choose Date & Time</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" [(ngModel)]="requestDate">
+      </div>
+      <div class="form-group">
+        <label>Start Time</label>
+        <input type="time" [(ngModel)]="startTime">
+      </div>
+      <div class="form-group">
+        <label>End Time</label>
+        <input type="time" [(ngModel)]="endTime">
+      </div>
+      <div class="form-group">
+        <label>Reason (optional)</label>
+        <input type="text" placeholder="Brief reason..." [(ngModel)]="reason">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" (click)="submitUnoccupied()">
+        Submit Request
+      </button>
+    </div>
+  </div>
+
+  }
+
+</div>

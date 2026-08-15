@@ -1,0 +1,179 @@
+<div class="page-container">
+
+  <div class="page-header">
+    <h1>Faculty Dashboard</h1>
+    <p class="subtitle">Manage your classes and requests</p>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="cards">
+    <div class="card">
+      <h3>My Classes</h3>
+      <h2>{{totalClasses}}</h2>
+    </div>
+    <div class="card">
+      <h3>Pending Requests</h3>
+      <h2>{{pendingRequests}}</h2>
+    </div>
+    <div class="card">
+      <h3>Approved Requests</h3>
+      <h2>{{approvedRequests}}</h2>
+    </div>
+  </div>
+
+  <!-- Tab navigation -->
+  <div class="tab-bar">
+    <button class="tab-btn" [class.active]="activeTab === 'overview'" (click)="activeTab = 'overview'">
+      📅 Timetable Overview
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'my-classes'" (click)="activeTab = 'my-classes'">
+      🎓 My Classes
+    </button>
+  </div>
+
+  <!-- ── Tab: Timetable Overview ── -->
+  <div class="table-card" *ngIf="activeTab === 'overview'">
+    <div class="search-bar-row">
+      <input
+        class="search-input"
+        type="text"
+        placeholder="🔍 Search by subject, day, room, or faculty..."
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearch()">
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Faculty</th>
+          <th>Room</th>
+          <th>Day</th>
+          <th>Start</th>
+          <th>End</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of filteredTimetable" [class.highlight]="t.faculty?.id === facultyId">
+          <td>{{t.subjectName}}</td>
+          <td>
+            {{t.faculty?.facultyName}}
+            <span class="you-tag" *ngIf="t.faculty?.id === facultyId">You</span>
+          </td>
+          <td>{{t.room?.roomNumber}} <span class="type-tag">{{t.room?.roomType}}</span></td>
+          <td>{{t.dayOfWeek | titlecase}}</td>
+          <td>{{t.startTime}}</td>
+          <td>{{t.endTime}}</td>
+        </tr>
+        <tr *ngIf="filteredTimetable.length === 0">
+          <td colspan="6" class="empty">No results found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Tab: My Classes ── -->
+  <div class="table-card" *ngIf="activeTab === 'my-classes'">
+    <table>
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Room</th>
+          <th>Day</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of myClasses">
+          <td>{{c.subjectName}}</td>
+          <td>{{c.room?.roomNumber}} <span class="type-tag">{{c.room?.roomType}}</span></td>
+          <td>{{c.dayOfWeek | titlecase}}</td>
+          <td>{{c.startTime}}</td>
+          <td>{{c.endTime}}</td>
+          <td>
+            <button class="btn-swap" (click)="openSwap(c)">🔄 Swap</button>
+          </td>
+        </tr>
+        <tr *ngIf="myClasses.length === 0">
+          <td colspan="6" class="empty">No classes assigned to you.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Swap Modal ── -->
+  <div class="modal-overlay" *ngIf="swapModalOpen" (click)="closeSwap()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>🔄 Propose Class Swap</h2>
+        <button class="modal-close" (click)="closeSwap()">✕</button>
+      </div>
+
+      <div class="swap-sides">
+        <div class="swap-side mine">
+          <h4>Your Class</h4>
+          <p class="swap-subject">{{selectedMyClass?.subjectName}}</p>
+          <p>{{selectedMyClass?.dayOfWeek | titlecase}} · {{selectedMyClass?.startTime}} – {{selectedMyClass?.endTime}}</p>
+          <p class="room-tag">{{selectedMyClass?.room?.roomNumber}}</p>
+        </div>
+        <div class="swap-arrow">⇄</div>
+        <div class="swap-side target" [class.chosen]="selectedTargetClass">
+          <ng-container *ngIf="selectedTargetClass; else pickTarget">
+            <h4>{{selectedTargetClass?.faculty?.facultyName}}'s Class</h4>
+            <p class="swap-subject">{{selectedTargetClass?.subjectName}}</p>
+            <p>{{selectedTargetClass?.dayOfWeek | titlecase}} · {{selectedTargetClass?.startTime}} – {{selectedTargetClass?.endTime}}</p>
+            <p class="room-tag">{{selectedTargetClass?.room?.roomNumber}}</p>
+          </ng-container>
+          <ng-template #pickTarget>
+            <h4>Pick a Target Class below</h4>
+            <p class="empty-hint">Click any row to select</p>
+          </ng-template>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <label>Reason (optional)</label>
+        <input type="text" [(ngModel)]="swapReason" placeholder="Brief reason for the swap...">
+      </div>
+
+      <div class="modal-section">
+        <h4>Select Target Class</h4>
+        <div class="swap-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Subject</th>
+                <th>Faculty</th>
+                <th>Room</th>
+                <th>Day</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                class="target-row"
+                *ngFor="let t of allTimetable"
+                [class.selected]="selectedTargetClass?.id === t.id"
+                [style.display]="(t.faculty?.id === facultyId || t.id === selectedMyClass?.id) ? 'none' : ''"
+                (click)="selectTarget(t)">
+                <td>{{t.subjectName}}</td>
+                <td>{{t.faculty?.facultyName}}</td>
+                <td>{{t.room?.roomNumber}}</td>
+                <td>{{t.dayOfWeek | titlecase}}</td>
+                <td>{{t.startTime}} – {{t.endTime}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeSwap()">Cancel</button>
+        <button class="btn-primary" (click)="submitSwap()">Submit Swap Request</button>
+      </div>
+    </div>
+  </div>
+
+</div>

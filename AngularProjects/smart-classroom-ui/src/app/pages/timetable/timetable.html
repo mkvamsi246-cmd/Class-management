@@ -1,0 +1,99 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Timetable Management</h1>
+    <p class="subtitle">Schedule and manage class timetables</p>
+  </div>
+
+  <div class="form-card">
+    <h2>Add Timetable Entry</h2>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label for="subjectName">Subject Name</label>
+        <input
+          id="subjectName"
+          type="text"
+          placeholder="e.g. Mathematics"
+          [(ngModel)]="subjectName">
+      </div>
+
+      <div class="form-group">
+        <label for="facultySelect">Faculty</label>
+        <select id="facultySelect" [(ngModel)]="facultyId">
+          <option [ngValue]="null">-- Select Faculty --</option>
+          <option *ngFor="let f of facultyList" [ngValue]="f.id">
+            {{f.facultyName}}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="roomSelect">Room</label>
+        <select id="roomSelect" [(ngModel)]="roomId">
+          <option [ngValue]="null">-- Select Room --</option>
+          <option *ngFor="let r of roomList" [ngValue]="r.id">
+            {{r.roomNumber}} – {{r.roomType}}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="daySelect">Day</label>
+        <select id="daySelect" [(ngModel)]="dayOfWeek">
+          <option value="">-- Select Day --</option>
+          <option *ngFor="let d of days" [value]="d">{{d | titlecase}}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="startTime">Start Time</label>
+        <input id="startTime" type="time" [(ngModel)]="startTime">
+      </div>
+
+      <div class="form-group">
+        <label for="endTime">End Time</label>
+        <input id="endTime" type="time" [(ngModel)]="endTime">
+      </div>
+
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-primary" (click)="saveTimetable()">
+        + Add Entry
+      </button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <h2>All Timetable Entries</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Faculty</th>
+          <th>Room</th>
+          <th>Day</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of timetableList">
+          <td>{{t.subjectName}}</td>
+          <td>{{t.faculty?.facultyName || '—'}}</td>
+          <td>{{t.room?.roomNumber || '—'}} <span class="type-tag">{{t.room?.roomType}}</span></td>
+          <td>{{t.dayOfWeek | titlecase}}</td>
+          <td>{{t.startTime}}</td>
+          <td>{{t.endTime}}</td>
+          <td>
+            <button class="btn-danger-sm" (click)="deleteEntry(t.id)">Delete</button>
+          </td>
+        </tr>
+        <tr *ngIf="timetableList.length === 0">
+          <td colspan="7" class="empty">No timetable entries yet.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

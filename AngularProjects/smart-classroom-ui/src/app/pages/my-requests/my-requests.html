@@ -1,0 +1,21 @@
+<h1>My Requests</h1>
+
+<table>
+
+    <tr>
+        <th>Room</th>
+        <th>Reason</th>
+        <th>Status</th>
+    </tr>
+
+    <tr *ngFor="let request of requestList">
+
+        <td>{{request.room?.roomNumber}}</td>
+
+        <td>{{request.reason}}</td>
+
+        <td>{{request.status}}</td>
+
+    </tr>
+
+</table>

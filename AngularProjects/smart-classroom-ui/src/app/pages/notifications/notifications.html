@@ -1,0 +1,34 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Notifications</h1>
+    <p class="subtitle">Your latest alerts and updates</p>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading">
+    <span class="spinner">⏳</span> Loading notifications...
+  </div>
+
+  <!-- Notification list -->
+  <div *ngIf="!loading">
+    <div class="notification-card" *ngFor="let n of notificationList">
+      <div class="notif-icon">
+        <span *ngIf="n.message?.includes('APPROVED') || n.message?.includes('approved')">✅</span>
+        <span *ngIf="n.message?.includes('REJECTED') || n.message?.includes('rejected')">❌</span>
+        <span *ngIf="n.message?.includes('swap') || n.message?.includes('Swap') || n.message?.includes('wants to swap')">🔄</span>
+        <span *ngIf="!n.message?.includes('APPROVED') && !n.message?.includes('approved') && !n.message?.includes('REJECTED') && !n.message?.includes('rejected') && !n.message?.includes('swap') && !n.message?.includes('Swap') && !n.message?.includes('wants to swap')">🔔</span>
+      </div>
+      <div class="notif-body">
+        <p class="notif-message">{{n.message}}</p>
+        <span class="notif-time">{{n.createdAt | date:'dd MMM yyyy, h:mm a'}}</span>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" *ngIf="notificationList.length === 0">
+      <div class="empty-icon">🔔</div>
+      <h3>All caught up!</h3>
+      <p>You have no notifications yet.</p>
+    </div>
+  </div>
+</div>

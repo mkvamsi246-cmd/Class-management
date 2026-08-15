@@ -1,0 +1,76 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Room Management</h1>
+    <p class="subtitle">Manage classrooms, projector rooms, and labs</p>
+  </div>
+
+  <div class="form-card" *ngIf="role === 'ADMIN'">
+    <h2>Add New Room</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="roomNumber">Room Number</label>
+        <input
+          id="roomNumber"
+          type="text"
+          placeholder="e.g. R2, Lab-3"
+          [(ngModel)]="roomNumber">
+      </div>
+
+      <div class="form-group">
+        <label for="roomType">Room Type</label>
+        <select id="roomType" [(ngModel)]="roomType">
+          <option value="">-- Select Type --</option>
+          <option value="Classroom">Classroom</option>
+          <option value="Projector Room">Projector Room</option>
+          <option value="Lab">Lab</option>
+        </select>
+      </div>
+
+      <div class="form-group btn-group">
+        <button class="btn-primary" (click)="addRoom()">
+          + Add Room
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <h2>All Rooms</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Room Number</th>
+          <th>Room Type</th>
+          <th>Status</th>
+          <th *ngIf="role === 'ADMIN'">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let room of roomList">
+          <td>{{room.id}}</td>
+          <td><span class="room-number">{{room.roomNumber}}</span></td>
+          <td>
+            <span class="badge" [ngClass]="{
+              'badge-classroom': room.roomType === 'Classroom',
+              'badge-projector': room.roomType === 'Projector Room',
+              'badge-lab': room.roomType === 'Lab'
+            }">{{room.roomType}}</span>
+          </td>
+          <td>
+            <span class="status-badge" [ngClass]="{
+              'status-available': room.status === 'AVAILABLE',
+              'status-occupied': room.status === 'OCCUPIED'
+            }">{{room.status}}</span>
+          </td>
+          <td *ngIf="role === 'ADMIN'">
+            <button class="btn-danger" (click)="deleteRoom(room.id)">Delete</button>
+          </td>
+        </tr>
+        <tr *ngIf="roomList.length === 0">
+          <td colspan="5" class="empty">No rooms found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

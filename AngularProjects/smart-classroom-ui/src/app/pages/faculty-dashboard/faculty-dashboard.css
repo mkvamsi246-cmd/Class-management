@@ -1,0 +1,51 @@
+.cards {
+
+    display: flex;
+
+    gap: 20px;
+
+    flex-wrap: wrap;
+}
+
+.card {
+
+    min-width: 220px;
+
+    padding: 25px;
+
+    border-radius: 20px;
+
+    color: white;
+
+    background: linear-gradient(
+        135deg,
+        #2563eb,
+        #7c3aed
+    );
+
+    box-shadow:
+        0px 10px 25px rgba(0,0,0,0.2);
+
+    transition: all 0.4s;
+}
+
+.card:hover {
+
+    transform:
+        translateY(-10px)
+        scale(1.05);
+
+    cursor: pointer;
+}
+
+.card h3 {
+
+    font-size: 18px;
+}
+
+.card h2 {
+
+    margin-top: 15px;
+
+    font-size: 35px;
+}
